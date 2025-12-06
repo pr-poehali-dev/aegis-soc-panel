@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import Icon from '@/components/ui/icon';
 import { toast } from 'sonner';
+import IncidentsTable from '@/components/IncidentsTable';
+import AttackGraphView from '@/components/AttackGraphView';
+import RecommendationsPanel from '@/components/RecommendationsPanel';
+import EventTimeline from '@/components/EventTimeline';
 
 type IncidentStatus = 'active' | 'investigating' | 'resolved' | 'closed';
 type IncidentRisk = 'critical' | 'high' | 'medium' | 'low';
@@ -212,60 +210,6 @@ const Index = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const getRiskBadge = (risk: IncidentRisk) => {
-    const variants = {
-      critical: 'destructive',
-      high: 'default',
-      medium: 'secondary',
-      low: 'outline'
-    };
-    
-    const colors = {
-      critical: 'bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))]',
-      high: 'bg-[hsl(var(--warning))] text-[hsl(var(--warning-foreground))]',
-      medium: 'bg-yellow-600 text-white',
-      low: 'bg-green-600 text-white'
-    };
-
-    return (
-      <Badge className={`${colors[risk]} font-mono text-xs uppercase`}>
-        {risk}
-      </Badge>
-    );
-  };
-
-  const getStatusBadge = (status: IncidentStatus) => {
-    const colors = {
-      active: 'bg-red-600 text-white',
-      investigating: 'bg-orange-600 text-white',
-      resolved: 'bg-blue-600 text-white',
-      closed: 'bg-gray-600 text-white'
-    };
-
-    return (
-      <Badge className={`${colors[status]} font-mono text-xs`}>
-        {status}
-      </Badge>
-    );
-  };
-
-  const getNodeIcon = (type: NodeType) => {
-    const icons = {
-      user: 'User',
-      host: 'Server',
-      process: 'Cpu',
-      file: 'FileText',
-      network: 'Globe'
-    };
-    return icons[type];
-  };
-
-  const filteredIncidents = incidents.filter(inc => {
-    if (filterStatus !== 'all' && inc.status !== filterStatus) return false;
-    if (filterRisk !== 'all' && inc.risk !== filterRisk) return false;
-    return true;
-  });
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-card">
@@ -302,238 +246,24 @@ const Index = () => {
       <div className="container mx-auto px-6 py-6">
         <div className="grid grid-cols-12 gap-6">
           <div className="col-span-12 lg:col-span-8">
-            <Card className="border-border">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-xl">Active Incidents</CardTitle>
-                    <CardDescription className="font-mono text-xs mt-1">
-                      {filteredIncidents.length} incidents | Last updated: 2024-12-06 14:23:15
-                    </CardDescription>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Select value={filterRisk} onValueChange={setFilterRisk}>
-                      <SelectTrigger className="w-[140px] font-mono text-xs">
-                        <SelectValue placeholder="Risk Level" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Risks</SelectItem>
-                        <SelectItem value="critical">Critical</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="low">Low</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    <Select value={filterStatus} onValueChange={setFilterStatus}>
-                      <SelectTrigger className="w-[140px] font-mono text-xs">
-                        <SelectValue placeholder="Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="investigating">Investigating</SelectItem>
-                        <SelectItem value="resolved">Resolved</SelectItem>
-                        <SelectItem value="closed">Closed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-border hover:bg-transparent">
-                      <TableHead className="font-mono text-xs uppercase">ID</TableHead>
-                      <TableHead className="font-mono text-xs uppercase">Incident</TableHead>
-                      <TableHead className="font-mono text-xs uppercase">Risk</TableHead>
-                      <TableHead className="font-mono text-xs uppercase">Status</TableHead>
-                      <TableHead className="font-mono text-xs uppercase">Timestamp</TableHead>
-                      <TableHead className="font-mono text-xs uppercase">Assets</TableHead>
-                      <TableHead className="font-mono text-xs uppercase">Assignee</TableHead>
-                      <TableHead className="font-mono text-xs uppercase">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredIncidents.map((incident) => (
-                      <TableRow 
-                        key={incident.id}
-                        className="border-border cursor-pointer hover:bg-secondary/50"
-                        onClick={() => setSelectedIncident(incident.id)}
-                      >
-                        <TableCell className="font-mono text-xs">{incident.id}</TableCell>
-                        <TableCell className="text-sm max-w-[300px] truncate">{incident.title}</TableCell>
-                        <TableCell>{getRiskBadge(incident.risk)}</TableCell>
-                        <TableCell>{getStatusBadge(incident.status)}</TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground">{incident.timestamp}</TableCell>
-                        <TableCell className="font-mono text-xs">{incident.affectedAssets}</TableCell>
-                        <TableCell className="font-mono text-xs">{incident.assignee}</TableCell>
-                        <TableCell>
-                          <Button size="sm" variant="ghost" className="h-7 px-2">
-                            <Icon name="ExternalLink" size={14} />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <IncidentsTable
+              incidents={incidents}
+              filterStatus={filterStatus}
+              filterRisk={filterRisk}
+              onFilterStatusChange={setFilterStatus}
+              onFilterRiskChange={setFilterRisk}
+              onIncidentSelect={setSelectedIncident}
+            />
 
-            <Card className="border-border mt-6">
-              <CardHeader>
-                <CardTitle className="text-xl">Attack Graph Analysis</CardTitle>
-                <CardDescription className="font-mono text-xs mt-1">
-                  Incident: {selectedIncident || 'INC-2024-1847'} | Entity relationships
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-secondary/30 rounded-lg p-8 min-h-[400px] relative border border-border">
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full">
-                    <div className="flex justify-center items-center gap-8">
-                      {attackGraph.nodes.map((node, index) => (
-                        <div 
-                          key={node.id}
-                          className="relative group"
-                          style={{ 
-                            animation: `fadeIn 0.5s ease-out ${index * 0.1}s both`
-                          }}
-                        >
-                          <div className={`
-                            w-24 h-24 rounded-lg flex flex-col items-center justify-center gap-2 border-2 
-                            ${node.risk === 'critical' ? 'border-red-500 bg-red-500/10' : 
-                              node.risk === 'high' ? 'border-orange-500 bg-orange-500/10' : 
-                              'border-blue-500 bg-blue-500/10'}
-                            hover:scale-110 transition-transform cursor-pointer
-                          `}>
-                            <Icon name={getNodeIcon(node.type)} size={28} className="text-foreground" />
-                            <span className="text-xs font-mono font-medium text-center px-1">{node.label}</span>
-                          </div>
-                          <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {getRiskBadge(node.risk)}
-                          </div>
-                          
-                          {index < attackGraph.nodes.length - 1 && (
-                            <div className="absolute top-1/2 -right-8 w-16 flex items-center">
-                              <div className="w-full h-[2px] bg-primary/50"></div>
-                              <Icon name="ChevronRight" size={16} className="text-primary absolute -right-2" />
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="flex justify-center gap-6 mt-12">
-                      {attackGraph.edges.map((edge, index) => (
-                        <div 
-                          key={index} 
-                          className="text-xs font-mono text-muted-foreground bg-secondary px-3 py-1 rounded border border-border"
-                        >
-                          {edge.label}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <AttackGraphView
+              selectedIncident={selectedIncident}
+              attackGraph={attackGraph}
+            />
           </div>
 
           <div className="col-span-12 lg:col-span-4">
-            <Card className="border-border">
-              <CardHeader>
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <Icon name="Lightbulb" size={20} className="text-primary" />
-                  Recommendations
-                </CardTitle>
-                <CardDescription className="font-mono text-xs mt-1">
-                  {recommendations.length} action items
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[300px]">
-                  <div className="space-y-3">
-                    {recommendations.map((rec) => (
-                      <div 
-                        key={rec.id} 
-                        className={`
-                          p-4 rounded-lg border-l-4 bg-secondary/30
-                          ${rec.priority === 'critical' ? 'border-l-red-500' : 
-                            rec.priority === 'high' ? 'border-l-orange-500' : 
-                            'border-l-yellow-500'}
-                        `}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="text-sm font-semibold">{rec.title}</h4>
-                          <Badge variant="outline" className="font-mono text-xs">
-                            {rec.priority}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground mb-3">{rec.description}</p>
-                        <div className="flex gap-2">
-                          {rec.actions.map((action, idx) => (
-                            <Button 
-                              key={idx} 
-                              size="sm" 
-                              variant="outline" 
-                              className="h-7 text-xs font-mono"
-                            >
-                              {action}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border mt-6">
-              <CardHeader>
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <Icon name="Activity" size={20} className="text-primary" />
-                  Event Timeline
-                </CardTitle>
-                <CardDescription className="font-mono text-xs mt-1">
-                  Last 30 minutes
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[400px]">
-                  <div className="space-y-4 relative">
-                    <div className="absolute left-[9px] top-0 bottom-0 w-[2px] bg-border"></div>
-                    
-                    {timelineEvents.map((event, index) => (
-                      <div key={event.id} className="relative pl-8">
-                        <div className={`
-                          absolute left-0 w-5 h-5 rounded-full border-2 border-background flex items-center justify-center
-                          ${event.severity === 'critical' ? 'bg-red-500' :
-                            event.severity === 'high' ? 'bg-orange-500' :
-                            event.severity === 'medium' ? 'bg-yellow-500' :
-                            event.severity === 'low' ? 'bg-green-500' :
-                            'bg-blue-500'}
-                        `}>
-                          <div className="w-2 h-2 bg-white rounded-full"></div>
-                        </div>
-                        
-                        <div className="bg-secondary/30 p-3 rounded-lg border border-border">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-mono font-semibold">{event.type}</span>
-                            <span className="text-xs font-mono text-muted-foreground">{event.timestamp}</span>
-                          </div>
-                          <p className="text-xs text-muted-foreground mb-1">User: {event.user}</p>
-                          <p className="text-xs font-mono bg-background/50 p-2 rounded mt-2 break-all">
-                            {event.action}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
+            <RecommendationsPanel recommendations={recommendations} />
+            <EventTimeline events={timelineEvents} />
           </div>
         </div>
       </div>
